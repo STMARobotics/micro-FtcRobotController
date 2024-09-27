@@ -31,8 +31,10 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 /*
  * This file works in conjunction with the External Hardware Class sample called: ConceptExternalHardwareClass.java
@@ -61,6 +63,8 @@ public class DriveSubsystem {
     private DcMotor backLeftMotor;
     private DcMotor backRightMotor;
 
+    private IMU imu;
+
     private Telemetry telemetry;
 
     public static final String FRONT_LEFT_MOTOR = "front_left_motor";
@@ -74,6 +78,8 @@ public class DriveSubsystem {
 
         // Define and Initialize Motors
         assignMotors(hardwareMap);
+
+        this.imu = hardwareMap.get(IMU.class, "imu");
 
         setMotorRunModes();
         assignDriveDirections();
@@ -103,31 +109,33 @@ public class DriveSubsystem {
     }
 
     public void drive(double forward, double strafe, double turn, double reductionFactor) {
-        double originalDenominator = calculateDenominator(forward/reductionFactor, strafe/reductionFactor, turn/reductionFactor);
+        reductionFactor = Math.max(reductionFactor, 1.0);
 
-        double adjustedDenominator = originalDenominator * reductionFactor;
-        double frontLeftPower = (forward + strafe + turn) / adjustedDenominator;
-        double backLeftPower = (forward - strafe + turn) / adjustedDenominator;
-        double frontRightPower = (forward - strafe - turn) / adjustedDenominator;
-        double backRightPower = (forward + strafe - turn) / adjustedDenominator;
+        forward /= reductionFactor;
+        strafe /= reductionFactor;
+        turn /= reductionFactor;
+
+        double botHeading = getYaw(AngleUnit.RADIANS);
+
+        double rotX = strafe * Math.cos(-botHeading) - forward * Math.sin(-botHeading);
+        double rotY = strafe * Math.sin(-botHeading) + forward * Math.cos(-botHeading);
+
+        rotX *= 1.1;
+
+        double denominator = calculateDenominator(rotX, rotY, turn);
+        double frontLeftPower = (rotY + rotX + turn) / denominator;
+        double backLeftPower = (rotY - rotX + turn) / denominator;
+        double frontRightPower = (rotY - rotX - turn) / denominator;
+        double backRightPower = (rotY + rotX - turn) / denominator;
 
         frontLeftMotor.setPower(frontLeftPower);
         backLeftMotor.setPower(backLeftPower);
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
-
-        telemetry.addData("Forward", forward);
-        telemetry.addData("Strafe", strafe);
-        telemetry.addData("Turn", turn);
-        telemetry.addData("Reduction Factor", reductionFactor);
-        telemetry.addData("Front Left Power", frontLeftPower);
-        telemetry.addData("Front Right Power", frontRightPower);
-        telemetry.addData("Back Left Power", backLeftPower);
-        telemetry.addData("Back Right Power", backRightPower);
     }
 
-    private double calculateDenominator(double forward, double strafe, double turn) {
-        double sum = Math.abs(forward) + Math.abs(strafe) + Math.abs(turn);
+    private double calculateDenominator(double rotX, double rotY, double rx) {
+        double sum = Math.abs(rotX) + Math.abs(rotY) + Math.abs(rx);
         if (sum > 1) {
             return sum;
         }
@@ -136,5 +144,9 @@ public class DriveSubsystem {
 
     public void stop() {
         drive(0, 0, 0, 1);
+    }
+
+    public double getYaw(AngleUnit angleUnit) {
+        return imu.getRobotYawPitchRollAngles().getYaw(angleUnit);
     }
 }
