@@ -134,7 +134,7 @@ public class DriveSubsystem {
         return 1;
     }
 
-    private void stop() {
+    public void stop() {
         drive(0, 0, 0, 1);
     }
 }
