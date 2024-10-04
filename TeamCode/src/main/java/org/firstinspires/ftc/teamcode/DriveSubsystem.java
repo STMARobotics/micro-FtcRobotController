@@ -29,10 +29,13 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 /*
  * This file works in conjunction with the External Hardware Class sample called: ConceptExternalHardwareClass.java
@@ -61,7 +64,8 @@ public class DriveSubsystem {
     private DcMotor backLeftMotor;
     private DcMotor backRightMotor;
 
-    private HardwareMap hardwareMap;
+    private IMU imu;
+
     private Telemetry telemetry;
 
     public static final String FRONT_LEFT_MOTOR = "front_left_motor";
@@ -70,37 +74,24 @@ public class DriveSubsystem {
     public static final String BACK_RIGHT_MOTOR = "back_right_motor";
 
     // Define a constructor that allows the OpMode to pass a reference to itself.
-    public DriveSubsystem() {
-    }
-
-    /**
-     * Initialize all the robot's hardware.
-     * This method must be called ONCE when the OpMode is initialized.
-     * <p>
-     * All of the hardware devices are accessed via the hardware map, and initialized.
-     */
-    public void init(HardwareMap hm, Telemetry telemetry)    {
-        this.hardwareMap = hm;
+    public DriveSubsystem(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
         // Define and Initialize Motors
-        assignMotors();
+        assignMotors(hardwareMap);
 
+        this.imu = hardwareMap.get(IMU.class, "imu");
+        imu.initialize(new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                )
+        ));
+
+        setMotorRunModes();
         assignDriveDirections();
 
-        setPower(0);
-
-        frontLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        frontRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    }
-
-    private void setPower(double value) {
-        frontRightMotor.setPower(value);
-        frontLeftMotor.setPower(value);
-        backRightMotor.setPower(value);
-        backLeftMotor.setPower(value);
+        stop();
     }
 
     private void assignDriveDirections() {
@@ -110,42 +101,63 @@ public class DriveSubsystem {
         backRightMotor.setDirection(DcMotor.Direction.FORWARD);
     }
 
-    private void assignMotors() {
+    private void assignMotors(HardwareMap hardwareMap) {
         frontLeftMotor = hardwareMap.get(DcMotor.class, FRONT_LEFT_MOTOR);
         frontRightMotor = hardwareMap.get(DcMotor.class, FRONT_RIGHT_MOTOR);
         backLeftMotor = hardwareMap.get(DcMotor.class, BACK_LEFT_MOTOR);
         backRightMotor = hardwareMap.get(DcMotor.class, BACK_RIGHT_MOTOR);
     }
 
-    public void setPower(float forward, float strafe, float turn, float reductionFactor) {
-        float originalDenominator = calculateDenominator(forward/reductionFactor, strafe/reductionFactor, turn/reductionFactor);
+    private void setMotorRunModes() {
+        frontLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
 
-        float adjustedDenominator = originalDenominator * reductionFactor;
-        float frontLeftPower = (forward + strafe + turn) / adjustedDenominator;
-        float backLeftPower = (forward - strafe + turn) / adjustedDenominator;
-        float frontRightPower = (forward - strafe - turn) / adjustedDenominator;
-        float backRightPower = (forward + strafe - turn) / adjustedDenominator;
+    public void drive(double forward, double strafe, double turn, double reductionFactor) {
+        reductionFactor = Math.max(reductionFactor, 1.0);
+
+        forward /= reductionFactor;
+        strafe /= reductionFactor;
+        turn /= reductionFactor;
+
+        double botHeading = getYaw(AngleUnit.RADIANS);
+
+        double rotX = strafe * Math.cos(-botHeading) - forward * Math.sin(-botHeading);
+        double rotY = strafe * Math.sin(-botHeading) + forward * Math.cos(-botHeading);
+
+        rotX *= 1.1;
+
+        double denominator = calculateDenominator(rotX, rotY, turn);
+        double frontLeftPower = (rotY + rotX + turn) / denominator;
+        double backLeftPower = (rotY - rotX + turn) / denominator;
+        double frontRightPower = (rotY - rotX - turn) / denominator;
+        double backRightPower = (rotY + rotX - turn) / denominator;
 
         frontLeftMotor.setPower(frontLeftPower);
         backLeftMotor.setPower(backLeftPower);
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
-
-        telemetry.addData("Forward", forward);
-        telemetry.addData("Strafe", strafe);
-        telemetry.addData("Turn", turn);
-        telemetry.addData("Reduction Factor", reductionFactor);
-        telemetry.addData("Front Left Power", frontLeftPower);
-        telemetry.addData("Front Right Power", frontRightPower);
-        telemetry.addData("Back Left Power", backLeftPower);
-        telemetry.addData("Back Right Power", backRightPower);
     }
 
-    private float calculateDenominator(float forward, float strafe, float turn) {
-        float sum = Math.abs(forward) + Math.abs(strafe) + Math.abs(turn);
+    private double calculateDenominator(double rotX, double rotY, double rx) {
+        double sum = Math.abs(rotX) + Math.abs(rotY) + Math.abs(rx);
         if (sum > 1) {
             return sum;
         }
         return 1;
+    }
+
+    public void stop() {
+        drive(0, 0, 0, 1);
+    }
+
+    public double getYaw(AngleUnit angleUnit) {
+        return imu.getRobotYawPitchRollAngles().getYaw(angleUnit);
+    }
+
+    public void resetYaw() {
+        imu.resetYaw();
     }
 }

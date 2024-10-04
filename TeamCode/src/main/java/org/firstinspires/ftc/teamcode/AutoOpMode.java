@@ -10,8 +10,7 @@ public class AutoOpMode extends OpMode {
 
     @Override
     public void init() {
-        driveSubsystem = new DriveSubsystem();
-        driveSubsystem.init(hardwareMap, telemetry);
+        driveSubsystem = new DriveSubsystem(hardwareMap, telemetry);
     }
 
     @Override
