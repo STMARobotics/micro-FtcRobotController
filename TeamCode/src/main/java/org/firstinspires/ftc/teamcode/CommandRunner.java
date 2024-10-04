@@ -30,7 +30,9 @@ public class CommandRunner {
         runningCommand.loop();
         if (runningCommand.isFinished()) {
             runningCommand.stop(false);
-            runningCommand = runningCommand.getNextCommand();
+            Command nextCommand = runningCommand.getNextCommand();
+            runningCommand = null;
+            startCommand(nextCommand);
         }
     }
 
