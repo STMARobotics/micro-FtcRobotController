@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -80,6 +81,12 @@ public class DriveSubsystem {
         assignMotors(hardwareMap);
 
         this.imu = hardwareMap.get(IMU.class, "imu");
+        imu.initialize(new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                )
+        ));
 
         setMotorRunModes();
         assignDriveDirections();
@@ -148,5 +155,9 @@ public class DriveSubsystem {
 
     public double getYaw(AngleUnit angleUnit) {
         return imu.getRobotYawPitchRollAngles().getYaw(angleUnit);
+    }
+
+    public void resetYaw() {
+        imu.resetYaw();
     }
 }

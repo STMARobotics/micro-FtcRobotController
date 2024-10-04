@@ -37,6 +37,10 @@ public class TeleopOpMode extends OpMode {
         turn *= Math.abs(turn);
 
         driveSubsystem.drive(forward, strafe, turn, reductionFactor);
+
+        if (gamepad1.back) {
+            driveSubsystem.resetYaw();
+        }
     }
 
     @Override
