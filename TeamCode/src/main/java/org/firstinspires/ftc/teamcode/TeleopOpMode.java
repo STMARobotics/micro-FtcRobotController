@@ -26,17 +26,17 @@ public class TeleopOpMode extends OpMode {
     @Override
     public void loop() {
         // Read controller input
-        double forward = -gamepad1.left_stick_y;
-        double strafe = gamepad1.left_stick_x;
-        double turn = gamepad1.right_stick_x;
+        double translationY = -gamepad1.left_stick_y;
+        double translationX = gamepad1.left_stick_x;
+        double rotation = gamepad1.right_stick_x;
         double reductionFactor = gamepad1.right_bumper ? 4.0 : 1.0;
 
         // Square forward, strafe, and turn inputs while keeping their sign
-        forward *= Math.abs(forward);
-        strafe *= Math.abs(strafe);
-        turn *= Math.abs(turn);
+        translationY *= Math.abs(translationY);
+        translationX *= Math.abs(translationX);
+        rotation *= Math.abs(rotation);
 
-        driveSubsystem.drive(forward, strafe, turn, reductionFactor);
+        driveSubsystem.drive(translationY, translationX, rotation, reductionFactor);
 
         if (gamepad1.back) {
             driveSubsystem.resetYaw();

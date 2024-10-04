@@ -115,25 +115,25 @@ public class DriveSubsystem {
         backRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    public void drive(double forward, double strafe, double turn, double reductionFactor) {
+    public void drive(double translationY, double translationX, double rotation, double reductionFactor) {
         reductionFactor = Math.max(reductionFactor, 1.0);
 
-        forward /= reductionFactor;
-        strafe /= reductionFactor;
-        turn /= reductionFactor;
+        translationY /= reductionFactor;
+        translationX /= reductionFactor;
+        rotation /= reductionFactor;
 
         double botHeading = getYaw(AngleUnit.RADIANS);
 
-        double rotX = strafe * Math.cos(-botHeading) - forward * Math.sin(-botHeading);
-        double rotY = strafe * Math.sin(-botHeading) + forward * Math.cos(-botHeading);
+        double rotX = translationX * Math.cos(-botHeading) - translationY * Math.sin(-botHeading);
+        double rotY = translationX * Math.sin(-botHeading) + translationY * Math.cos(-botHeading);
 
         rotX *= 1.1;
 
-        double denominator = calculateDenominator(rotX, rotY, turn);
-        double frontLeftPower = (rotY + rotX + turn) / denominator;
-        double backLeftPower = (rotY - rotX + turn) / denominator;
-        double frontRightPower = (rotY - rotX - turn) / denominator;
-        double backRightPower = (rotY + rotX - turn) / denominator;
+        double denominator = calculateDenominator(rotX, rotY, rotation);
+        double frontLeftPower = (rotY + rotX + rotation) / denominator;
+        double backLeftPower = (rotY - rotX + rotation) / denominator;
+        double frontRightPower = (rotY - rotX - rotation) / denominator;
+        double backRightPower = (rotY + rotX - rotation) / denominator;
 
         frontLeftMotor.setPower(frontLeftPower);
         backLeftMotor.setPower(backLeftPower);
