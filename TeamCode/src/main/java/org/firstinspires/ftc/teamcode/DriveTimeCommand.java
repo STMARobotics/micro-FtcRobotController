@@ -20,7 +20,7 @@ public class DriveTimeCommand extends Command {
 
     @Override
     public void loop() {
-        driveSubsystem.setPower(0.5f, 0, 0, 1);
+        driveSubsystem.drive(0.5f, 0, 0, 1);
     }
 
     @Override
@@ -30,6 +30,6 @@ public class DriveTimeCommand extends Command {
 
     @Override
     public void stop(boolean interrupted) {
-        driveSubsystem.setPower(0, 0, 0, 1);
+        driveSubsystem.drive(0, 0, 0, 1);
     }
 }
