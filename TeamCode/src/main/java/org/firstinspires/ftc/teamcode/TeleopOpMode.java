@@ -7,10 +7,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 public class TeleopOpMode extends OpMode {
 
     private DriveSubsystem driveSubsystem;
+    private ArmSubsystem armSubsystem;
+    private boolean climb;
 
     @Override
     public void init() {
         driveSubsystem = new DriveSubsystem(hardwareMap, telemetry);
+        armSubsystem = new ArmSubsystem(hardwareMap);
+        climb = false;
     }
 
     @Override
@@ -20,7 +24,7 @@ public class TeleopOpMode extends OpMode {
 
     @Override
     public void start() {
-
+        driveSubsystem.resetYaw();
     }
 
     @Override
@@ -41,6 +45,29 @@ public class TeleopOpMode extends OpMode {
         if (gamepad1.back) {
             driveSubsystem.resetYaw();
         }
+
+        if (gamepad2.a) {
+            climb = true;
+        } else if (gamepad2.b) {
+            climb = false;
+        }
+
+        armSubsystem.drivePivot(climb ? -1 : -gamepad2.left_stick_y);
+        armSubsystem.driveWrist(-gamepad2.right_stick_y * 0.25);
+        double extensionSpeed = 0.0;
+        if (gamepad2.dpad_up) {
+            extensionSpeed = -0.5;
+        } else if (gamepad2.dpad_down) {
+            extensionSpeed = 0.5;
+        }
+        armSubsystem.driveExtension(extensionSpeed);
+        double intakeSpeed = 0.0;
+        if (gamepad2.right_trigger > 0.8) {
+            intakeSpeed = -1;
+        } else if (gamepad2.left_trigger > 0.8) {
+            intakeSpeed = 1;
+        }
+        armSubsystem.driveIntake(intakeSpeed);
     }
 
     @Override
