@@ -53,7 +53,6 @@ public class TeleopOpMode extends OpMode {
         }
 
         armSubsystem.drivePivot(climb ? -1 : -gamepad2.left_stick_y);
-        armSubsystem.driveWrist(-gamepad2.right_stick_y * 0.25);
         double extensionSpeed = 0.0;
         if (gamepad2.dpad_up) {
             extensionSpeed = -0.5;
@@ -61,13 +60,11 @@ public class TeleopOpMode extends OpMode {
             extensionSpeed = 0.5;
         }
         armSubsystem.driveExtension(extensionSpeed);
-        double intakeSpeed = 0.0;
-        if (gamepad2.right_trigger > 0.8) {
-            intakeSpeed = -1;
-        } else if (gamepad2.left_trigger > 0.8) {
-            intakeSpeed = 1;
+        if (gamepad2.right_bumper) {
+            armSubsystem.closeClaw();
+        } else if (gamepad2.left_bumper) {
+            armSubsystem.openClaw();
         }
-        armSubsystem.driveIntake(intakeSpeed);
     }
 
     @Override

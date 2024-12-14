@@ -4,26 +4,32 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 @Autonomous
-public class BasicAutoOpMode extends LinearOpMode {
+public class OneSampleAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        // init
         DriveSubsystem driveSubsystem = new DriveSubsystem(hardwareMap, telemetry);
+        ArmSubsystem armSubsystem = new ArmSubsystem(hardwareMap);
+
+        driveSubsystem.resetYaw();
 
         waitForStart();
 
-        // run
+        armSubsystem.closeClaw();
+
         driveSubsystem.drive(0.5, 0, 0, 1);
-        Thread.sleep(1500);
-        driveSubsystem.stop();
-        Thread.sleep(1000);
-        driveSubsystem.drive(0, -0.5, 0, 1);
-        Thread.sleep(750);
-        driveSubsystem.stop();
-        Thread.sleep(1000);
+        armSubsystem.drivePivot(0.7);
+        armSubsystem.driveExtension(-0.2);
+        Thread.sleep(2000);
+        armSubsystem.drivePivot(0);
+        armSubsystem.driveExtension(0);
         driveSubsystem.drive(-0.5, 0, 0, 1);
+        Thread.sleep(500);
+        armSubsystem.openClaw();
         Thread.sleep(1500);
+        driveSubsystem.drive(0, 0.5, 0, 1);
+        Thread.sleep(3000);
         driveSubsystem.stop();
     }
+
 }
